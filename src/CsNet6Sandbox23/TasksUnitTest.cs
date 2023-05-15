@@ -6,8 +6,8 @@ namespace CsNet6Sandbox23;
 public class TasksUnitTest
 {
     private int tId;
-    private readonly SemaphoreSlim taskUnderTestSignal = new(0, 1);
-    private readonly SemaphoreSlim taskUnderTestSignals = new(0, 1);
+    private readonly SemaphoreSlim callerSignal = new(0, 1);
+    private readonly SemaphoreSlim taskSignal = new(0, 1);
     TimeSpan dTwait;
 
     public TasksUnitTest()
@@ -22,11 +22,11 @@ public class TasksUnitTest
     async Task<int> TaskUnderTest()
     {
         tId = Environment.CurrentManagedThreadId;
-        await taskUnderTestSignal.WaitAsync();
-        taskUnderTestSignals.Release();
+        await callerSignal.WaitAsync();
+        taskSignal.Release();
         ++tId;
-        await taskUnderTestSignal.WaitAsync();
-        taskUnderTestSignals.Release();
+        await callerSignal.WaitAsync();
+        taskSignal.Release();
         return ++tId;
     }
 
@@ -52,8 +52,8 @@ public class TasksUnitTest
         Task<int> task = TaskUnderTest();
 
         // act
-        taskUnderTestSignal.Release();
-        await taskUnderTestSignals.WaitAsync();
+        callerSignal.Release();
+        await taskSignal.WaitAsync();
 
 
         tId.Should().Be(ctId + 1);
@@ -68,9 +68,9 @@ public class TasksUnitTest
 
 
         // act
-        taskUnderTestSignal.Release();
-        await taskUnderTestSignals.WaitAsync();
-        taskUnderTestSignal.Release();
+        callerSignal.Release();
+        await taskSignal.WaitAsync();
+        callerSignal.Release();
         task.Wait(dTwait).Should().BeTrue();
 
         tId.Should().Be(ctId + 2);
