@@ -13,6 +13,7 @@ public class ProducerConsumerQueueUnitTest
     Use a CancellationToken to signal the threads to stop gracefully.
     */
 
+    // TD: WIP.. pause due to - too long question.. it's a task, not an interview question :)
 
     int produceWorkLeft = 10000;
     int producerBatchSize = 101;
@@ -20,7 +21,7 @@ public class ProducerConsumerQueueUnitTest
     CancellationTokenSource cts = new();
 
 
-    [Fact]
+    //[Fact]
     public async Task TEST__ProducerConsumerQueueAsync()
     {
         BlockingCollection<int> bc = new ();
