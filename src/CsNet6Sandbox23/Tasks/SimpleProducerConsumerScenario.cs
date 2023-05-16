@@ -12,18 +12,17 @@ public class SimpleProducerConsumerScenarioUnitTest
     Use the Monitor object to ensure that only one thread accesses the queue at a time.
     */
 
+
     static readonly int queueLimit = 100;
     Queue<int> queue = new(queueLimit);
     object queueLock = new();
 
-    bool running = true;
-    readonly AutoResetEvent queueFullSignal = new(false);
-    readonly AutoResetEvent queueEmptySignal = new(false);
-    readonly ManualResetEvent stopRunningSignal = new(false);
-
-    Random randomProvider = new();
-
+    private readonly AutoResetEvent queueFullSignal = new(false);
+    private readonly AutoResetEvent queueEmptySignal = new(false);
+    private readonly Random randomProvider = new();
+    
     private readonly ITestOutputHelper output;
+    private readonly CancellationTokenSource cts = new();
 
 
     public SimpleProducerConsumerScenarioUnitTest(ITestOutputHelper output)
@@ -31,49 +30,49 @@ public class SimpleProducerConsumerScenarioUnitTest
         this.output = output;
     }
 
-    protected Task ProducerTask()
-    {
-        return new Task( () => {
-            output.WriteLine("ProducerTask started");
-            while (running) { 
-                lock (queueLock)
-                {
-                    while (queue.Count < queueLimit)
-                        queue.Enqueue(randomProvider.Next());
-                }
 
-                queueFullSignal.Set();
-                WaitHandle.WaitAny(new WaitHandle[] { 
-                    stopRunningSignal, 
-                    queueEmptySignal 
-                    });
+    protected void ProducerJob(CancellationToken ct)
+    {
+        output.WriteLine("ProducerJob started");
+        while (ct.IsCancellationRequested == false) { 
+            lock (queueLock)
+            {
+                while (queue.Count < queueLimit)
+                    queue.Enqueue(randomProvider.Next());
             }
-            output.WriteLine("ProducerTask ended");
-        }, TaskCreationOptions.LongRunning);
+
+            queueFullSignal.Set();
+
+            WaitHandle.WaitAny(new WaitHandle[] {
+                ct.WaitHandle,
+                queueEmptySignal 
+                });
+        }
+        output.WriteLine("ProducerJob ended");
     }
 
-    protected Task ConsumerTask()
+    protected void ConsumerJob(CancellationToken ct)
     {
-        return new Task(() => {
-            output.WriteLine("ConsumerTask started");
-            while (running)
+        output.WriteLine("ConsumerJob started");
+        while (ct.IsCancellationRequested == false)
+        {
+            lock (queueLock)
             {
-                lock (queueLock)
+                while (queue.Count > 0) 
                 {
-                    while (queue.Count > 0) 
-                    {
-                        int item = queue.Dequeue();
-                    }
+                    int item = queue.Dequeue();
+                    // do item work here.. :)
                 }
-
-                queueEmptySignal.Set();
-                WaitHandle.WaitAny(new WaitHandle[] {
-                    stopRunningSignal,
-                    queueFullSignal
-                    });
             }
-            output.WriteLine("ConsumerTask ended");
-        }, TaskCreationOptions.LongRunning);
+
+            queueEmptySignal.Set();
+            
+            WaitHandle.WaitAny(new WaitHandle[] {
+                ct.WaitHandle,
+                queueFullSignal
+                });
+        }
+        output.WriteLine("ConsumerJob ended");
     }
 
 
@@ -82,18 +81,15 @@ public class SimpleProducerConsumerScenarioUnitTest
     {
         output.WriteLine("main start");
 
-        var producerTask = ProducerTask();
-        var consumerTask = ConsumerTask();
-
-        producerTask.Start();
-        consumerTask.Start();
+        var producerTask = Task.Factory.StartNew(() => ProducerJob(cts.Token), TaskCreationOptions.LongRunning);
+        var consumerTask = Task.Factory.StartNew(() => ConsumerJob(cts.Token), TaskCreationOptions.LongRunning);
 
         output.WriteLine("tasks started");
 
         await Task.Delay(250);
 
-        running = false;
-        stopRunningSignal.Set();
+        cts.Cancel();
+
         output.WriteLine("running = false");
 
         Task.WaitAll(producerTask, consumerTask);
