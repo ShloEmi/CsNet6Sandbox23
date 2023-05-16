@@ -22,7 +22,7 @@ public class ProducerConsumerQueueUnitTest
 
 
     //[Fact]
-    public async Task TEST__ProducerConsumerQueueAsync()
+    public async Task TestRun__ProducerConsumerQueueAsync()
     {
         BlockingCollection<int> bc = new ();
 

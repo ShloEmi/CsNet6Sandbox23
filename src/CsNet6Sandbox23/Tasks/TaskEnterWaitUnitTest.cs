@@ -32,7 +32,7 @@ public class TaskEnterWaitUnitTest
 
 
     [Fact]
-    public void TEST__TaskEnterWait()
+    public void TestRun__TaskEnterWait()
     {
         List<Task> tasks = new();
 

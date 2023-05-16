@@ -77,7 +77,7 @@ public class SimpleProducerConsumerScenarioUnitTest
 
 
     [Fact]
-    public async Task TEST__SimpleProducerConsumerScenario()
+    public async Task TestRun__SimpleProducerConsumerScenario()
     {
         output.WriteLine("main start");
 

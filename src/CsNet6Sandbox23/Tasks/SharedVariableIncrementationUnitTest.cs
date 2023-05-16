@@ -14,7 +14,7 @@ public class SharedVariableIncrementationUnitTest
 
 
     [Fact]
-    public void TEST__SharedVariableIncrementation()
+    public void TestRun__SharedVariableIncrementation()
     {
         CancellationTokenSource tcs = new();
         Task[] tasks = new Task[2] ;

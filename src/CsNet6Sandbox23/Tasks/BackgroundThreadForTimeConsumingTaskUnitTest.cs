@@ -45,7 +45,7 @@ public class BackgroundThreadForTimeConsumingTaskUnitTest
 
 
     [Fact]
-    public async Task TEST__BackgroundThreadForTimeConsumingTask()
+    public async Task TestRun__BackgroundThreadForTimeConsumingTask()
     {
         CancellationTokenSource cts = new();
         List<string> output;
